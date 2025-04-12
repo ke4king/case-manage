@@ -10,7 +10,7 @@
           <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin"></el-input>
         </el-form-item>
         <el-form-item label="验证码" prop="turnstileResponse">
-          <div id="cf-turnstile" class="turnstile-container" theme="light"></div>
+          <div id="cf-turnstile" class="turnstile-container"></div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" style="width: 100%;" @click="handleLogin">登录</el-button>
@@ -103,7 +103,8 @@ const initTurnstile = () => {
       'error-callback': function(error) {
         loginForm.turnstileResponse = '';
         ElMessage.error('验证码加载失败，请刷新重试');
-      }
+      },
+      theme: "light"
     });
   } else {
     ElMessage.error('验证码组件加载失败');
