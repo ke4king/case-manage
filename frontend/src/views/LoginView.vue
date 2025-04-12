@@ -9,6 +9,9 @@
         <el-form-item label="密码" prop="password">
           <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin"></el-input>
         </el-form-item>
+        <el-form-item label="验证码" prop="turnstileResponse">
+          <div id="cf-turnstile" class="turnstile-container"></div>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" style="width: 100%;" @click="handleLogin">登录</el-button>
         </el-form-item>
@@ -18,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
@@ -28,10 +31,15 @@ const userStore = useUserStore()
 const loginFormRef = ref(null)
 const loading = ref(false)
 
+// Turnstile 验证码配置
+const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // 请替换为您的实际 site key
+let turnstileWidget = null;
+
 // 表单数据
 const loginForm = reactive({
   username: '',
   password: '',
+  turnstileResponse: ''
 })
 
 // 表单验证规则
@@ -43,47 +51,122 @@ const rules = {
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6个字符', trigger: 'blur' }
   ],
+  turnstileResponse: [
+    { required: true, message: '请完成人机验证', trigger: 'change' }
+  ]
 }
+
+// 加载 Turnstile 脚本
+const loadTurnstileScript = () => {
+  return new Promise((resolve, reject) => {
+    // 检查脚本是否已经加载
+    if (document.querySelector('script[src*="turnstile.js"]')) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('加载验证码失败'));
+    
+    document.head.appendChild(script);
+  });
+};
+
+// 初始化 Turnstile 组件
+const initTurnstile = () => {
+  if (window.turnstile) {
+    // 如果已经有一个小部件，先重置它
+    if (turnstileWidget) {
+      window.turnstile.reset(turnstileWidget);
+    }
+    
+    // 渲染 Turnstile 小部件
+    turnstileWidget = window.turnstile.render('#cf-turnstile', {
+      sitekey: TURNSTILE_SITE_KEY,
+      callback: function(token) {
+        loginForm.turnstileResponse = token;
+      },
+      'expired-callback': function() {
+        loginForm.turnstileResponse = '';
+        ElMessage.warning('验证码已过期，请重新验证');
+      }
+    });
+  } else {
+    ElMessage.error('验证码组件加载失败');
+  }
+};
 
 // 处理登录
 const handleLogin = () => {
-  if (!loginFormRef.value) return
+  if (!loginFormRef.value) return;
   
   loginFormRef.value.validate(async (valid) => {
-    if (!valid) return
+    if (!valid) return;
     
-    loading.value = true
+    // 验证是否完成验证码
+    if (!loginForm.turnstileResponse) {
+      ElMessage.warning('请先完成人机验证');
+      return;
+    }
+    
+    loading.value = true;
     try {
       // 构建登录数据
       const loginData = {
         username: loginForm.username,
         password: loginForm.password,
-      }
-      
-      // 添加调试日志
-      console.log('登录请求数据:', JSON.stringify(loginData))
+        turnstileResponse: loginForm.turnstileResponse
+      };
       
       // 调用登录接口
-      await userStore.login(loginData)
-      ElMessage.success('登录成功')
-      router.push('/')
+      await userStore.login(loginData);
+      ElMessage.success('登录成功');
+      router.push('/');
     } catch (error) {
-      console.error('登录请求失败:', error)
-      ElMessage.error('登录失败，请检查用户名和密码')
+      ElMessage.error('登录失败，请检查用户名和密码');
+      // 重置验证码
+      if (window.turnstile && turnstileWidget) {
+        window.turnstile.reset(turnstileWidget);
+        loginForm.turnstileResponse = '';
+      }
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  })
-}
+  });
+};
 
-// 检查已登录状态
-onMounted(() => {
+// 清理 Turnstile 小部件
+const cleanupTurnstile = () => {
+  if (window.turnstile && turnstileWidget) {
+    window.turnstile.remove(turnstileWidget);
+    turnstileWidget = null;
+  }
+};
+
+onMounted(async () => {
   // 如果已经登录，跳转到首页
   if (userStore.isLoggedIn) {
-    router.push('/')
-    return
+    router.push('/');
+    return;
   }
-})
+  
+  try {
+    // 加载 Turnstile 脚本并初始化
+    await loadTurnstileScript();
+    initTurnstile();
+  } catch (error) {
+    ElMessage.error('验证码加载失败，请刷新页面重试');
+  }
+});
+
+onBeforeUnmount(() => {
+  cleanupTurnstile();
+});
 </script>
 
 <style scoped>
@@ -108,5 +191,11 @@ onMounted(() => {
   margin-bottom: 30px;
   font-size: 24px;
   color: #409EFF;
+}
+
+.turnstile-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }
 </style> 

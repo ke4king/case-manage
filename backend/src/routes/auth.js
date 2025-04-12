@@ -4,6 +4,30 @@ import { processRowResult } from '../utils/db';
 
 const authRoutes = new Hono();
 
+// 验证 Turnstile 响应
+async function verifyTurnstile(token, remoteip, secretKey) {
+  const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+  
+  try {
+    const formData = new FormData();
+    formData.append('secret', secretKey);
+    formData.append('response', token);
+    if (remoteip) {
+      formData.append('remoteip', remoteip);
+    }
+    
+    const result = await fetch(TURNSTILE_VERIFY_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    return await result.json();
+  } catch (error) {
+    console.error('Turnstile verification error:', error);
+    return { success: false, 'error-codes': ['internal-error'] };
+  }
+}
+
 // 获取验证码
 authRoutes.post('/captcha', async (c) => {
   try {
@@ -30,20 +54,49 @@ authRoutes.post('/captcha', async (c) => {
 // 用户登录
 authRoutes.post('/login', async (c) => {
   try {
-    console.log('收到登录请求');
     const requestData = await c.req.json();
-    console.log('登录请求数据:', JSON.stringify(requestData));
-    
-    const { username, password } = requestData;
+    const { username, password, turnstileResponse } = requestData;
 
     // 参数验证
     if (!username || !password) {
-      console.log('登录失败: 用户名或密码为空');
       return c.json({ error: '用户名和密码不能为空' }, 400);
+    }
+    
+    // 验证 Turnstile 响应
+    if (!turnstileResponse) {
+      return c.json({ error: '请完成人机验证' }, 400);
+    }
+    
+    // 获取客户端 IP
+    const clientIP = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || '127.0.0.1';
+    
+    // 检查是否配置了Turnstile密钥
+    const turnstileSecretKey = c.env.TURNSTILE_SECRET_KEY;
+    if (!turnstileSecretKey) {
+      console.error('未配置Turnstile密钥，跳过验证');
+    } else {
+      // 验证 Turnstile 响应
+      const turnstileResult = await verifyTurnstile(turnstileResponse, clientIP, turnstileSecretKey);
+      
+      if (!turnstileResult.success) {
+        const errorCodes = turnstileResult['error-codes'] || [];
+        let errorMessage = '人机验证失败';
+        
+        // 提供更具体的错误信息
+        if (errorCodes.includes('timeout-or-duplicate')) {
+          errorMessage = '验证码已过期或已使用，请重新验证';
+        } else if (errorCodes.includes('invalid-input-response')) {
+          errorMessage = '无效的验证码响应';
+        }
+        
+        return c.json({ 
+          error: errorMessage, 
+          'error-codes': errorCodes 
+        }, 400);
+      }
     }
 
     // 查询用户
-    console.log('查询用户:', username);
     const result = await c.env.DB.prepare(
       'SELECT id, username, hashed_password, is_active, is_superuser FROM users WHERE username = ?1'
     )
@@ -51,34 +104,26 @@ authRoutes.post('/login', async (c) => {
       .run();
 
     const user = processRowResult(result);
-    console.log('查询结果:', user ? '找到用户' : '用户不存在');
 
     // 用户不存在
     if (!user) {
-      console.log('登录失败: 用户不存在');
       return c.json({ error: '用户名或密码错误' }, 401);
     }
 
     // 用户被禁用
     if (user.is_active !== 1) {
-      console.log('登录失败: 用户被禁用');
       return c.json({ error: '账号已被禁用' }, 403);
     }
 
     // 验证密码
-    console.log('开始验证密码');
     const isValid = await verifyPassword(password, user.hashed_password);
-    console.log('密码验证结果:', isValid ? '验证通过' : '验证失败');
     
     if (!isValid) {
-      console.log('登录失败: 密码错误');
       return c.json({ error: '用户名或密码错误' }, 401);
     }
 
     // 生成 JWT
-    console.log('生成JWT令牌');
     const token = await generateJWT(user, c.env.JWT_SECRET);
-    console.log('JWT令牌生成成功');
 
     return c.json({
       token,
