@@ -10,7 +10,7 @@
           <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin"></el-input>
         </el-form-item>
         <el-form-item label="验证码" prop="turnstileResponse">
-          <div id="cf-turnstile" class="turnstile-container"></div>
+          <div id="cf-turnstile" class="turnstile-container" theme="light"></div>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="loading" style="width: 100%;" @click="handleLogin">登录</el-button>
@@ -32,7 +32,7 @@ const loginFormRef = ref(null)
 const loading = ref(false)
 
 // Turnstile 验证码配置
-const TURNSTILE_SITE_KEY = '1x00000000000000000000AA'; // 请替换为您的实际 site key
+const TURNSTILE_SITE_KEY = '0x4AAAAAABKQ0vSK6mtjA5tA'; // 请替换为您的实际 site key
 let turnstileWidget = null;
 
 // 表单数据
