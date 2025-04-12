@@ -1,0 +1,36 @@
+{
+  "name": "case-management-frontend",
+  "version": "1.0.0",
+  "description": "案件管理系统前端",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "案件管理",
+    "vue3",
+    "element-plus"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "axios": "^1.6.8",
+    "dayjs": "^1.11.10",
+    "dompurify": "^3.2.5",
+    "element-china-area-data": "^6.1.0",
+    "element-plus": "^2.6.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "marked": "^12.0.1",
+    "md-editor-v3": "^4.11.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.5.13",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^6.2.5"
+  }
+}

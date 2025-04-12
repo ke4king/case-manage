@@ -1,0 +1,155 @@
+/* Element Plus 样式覆盖 */
+
+/* 分隔线标题样式 */
+.el-divider__text {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 18px;
+  background-color: transparent;
+  padding-left: 0;
+}
+
+/* 设置大号标题 */
+.title-large .el-divider__text {
+  font-size: 22px;
+  display: block;
+  width: 100%;
+  padding-top: 8px;
+}
+
+/* 设置中等标题 */
+.title-medium .el-divider__text {
+  font-size: 18px;
+}
+
+/* 分隔线样式 */
+.el-divider {
+  margin: 40px 0 24px 0;
+  position: relative;
+  border-top: 1px solid #e5e7eb;
+}
+
+.el-divider--horizontal {
+  height: 2px;
+  background-color: transparent;
+  border: none;
+}
+
+/* 表单项提示样式 */
+.form-item-tip {
+  color: #909399;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* 弹性布局的按钮组 */
+.el-button-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 卡片样式优化 */
+.el-card {
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #ebeef5;
+}
+
+.el-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.el-card__header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  font-weight: 500;
+}
+
+.el-card__body {
+  padding: 20px;
+}
+
+/* 表格样式优化 */
+.el-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td {
+  background-color: #f9fafb;
+}
+
+/* 输入框样式优化 */
+.el-input__inner {
+  transition: all 0.3s ease;
+}
+
+.el-input__inner:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+/* Markdown 编辑器样式优化 */
+.md-editor {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.md-editor-toolbar-wrapper {
+  background-color: #f5f7fa;
+}
+
+.md-editor-toolbar {
+  font-size: 16px;
+  padding: 8px;
+}
+
+.md-editor-toolbar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.md-editor-toolbar button {
+  padding: 6px 8px;
+  margin: 0 2px;
+}
+
+.md-editor-content {
+  font-size: 15px;
+}
+
+/* Markdown 预览样式 */
+.md-editor-preview-wrapper,
+.md-editor-preview {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+
+.md-editor-catalog {
+  border: none;
+  background-color: #f8fafc;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* 确保 Markdown 中的标题左对齐 */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.md-editor-preview h1,
+.md-editor-preview h2,
+.md-editor-preview h3,
+.md-editor-preview h4 {
+  text-align: left;
+  margin: 20px 0 16px 0;
+  font-weight: 600;
+  color: #1e293b;
+  border-bottom: none;
+} 

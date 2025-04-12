@@ -1,0 +1,30 @@
+# Cloudflare Wrangler 相关
+.wrangler/
+.dev.vars
+
+# 敏感配置文件
+.env
+*.env.local
+
+# Node 相关
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 部署时可能生成的文件
+dist/
+build/
+
+# 本地测试相关
+.test/
+*.test.js.snap
+
+# 敏感凭据和密钥
+*.pem
+*.key
+*.cert 

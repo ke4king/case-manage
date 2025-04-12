@@ -1,0 +1,26 @@
+{
+  "name": "case-management-cloudflare",
+  "version": "1.0.0",
+  "description": "案件管理系统 - 基于Cloudflare构建",
+  "scripts": {
+    "dev:backend": "cd backend && wrangler dev --env dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "deploy:backend": "cd backend && wrangler deploy",
+    "deploy": "npm run build:frontend && npm run deploy:backend",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "d1",
+    "r2",
+    "case-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

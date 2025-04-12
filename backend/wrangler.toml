@@ -1,0 +1,28 @@
+name = "case-management"
+main = "./src/index.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./../frontend/dist"
+binding = "ASSETS"
+run_worker_first=false
+not_found_handling = "single-page-application"
+
+# 生产环境配置
+[vars]
+JWT_SECRET = "wP8gV4mD1pO9kL7tY6cB"
+ENV = "production"
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "Qwer999tt!@#"
+
+# 数据库配置
+[[d1_databases]]
+binding = "DB"
+database_name = "case-management"
+database_id = ""
+
+# R2存储配置
+[[r2_buckets]]
+binding = "CASE_FILES"
+bucket_name = "case-files" 

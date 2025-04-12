@@ -1,0 +1,35 @@
+{
+  "name": "case-management-cloudflare",
+  "version": "1.0.0",
+  "description": "基于 Cloudflare Workers 的案件管理系统",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
+    "build:frontend": "cd frontend && npm run build",
+    "setup:d1": "wrangler d1 execute case-management --file=./migrations/init.sql --remote"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20240408.0",
+    "hono": "^4.7.5",
+    "itty-router": "^4.0.27",
+    "jose": "^5.2.2",
+    "svg-captcha": "^1.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "wrangler": "^4.0.0"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "d1",
+    "r2",
+    "case-management"
+  ],
+  "author": "",
+  "license": "MIT"
+}
