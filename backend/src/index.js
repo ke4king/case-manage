@@ -13,11 +13,12 @@ const app = new Hono();
 
 // 配置 CORS
 app.use('*', cors({
-  origin: '*',
+  origin: ['*', 'https://challenges.cloudflare.com'],
   allowHeaders: ['Authorization', 'Content-Type'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   exposeHeaders: ['Authorization'],
   maxAge: 86400,
+  credentials: true
 }));
 
 // 健康检查端点

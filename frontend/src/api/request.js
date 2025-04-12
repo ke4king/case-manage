@@ -41,6 +41,7 @@ const setupInterceptors = (axiosInstance) => {
   // 响应拦截器
   axiosInstance.interceptors.response.use(
     response => {
+      console.log('请求成功:', response.config.url, response.data);
       return response.data
     },
     error => {
@@ -48,6 +49,14 @@ const setupInterceptors = (axiosInstance) => {
       const status = error.response?.status
       const url = error.config?.url
       const method = error.config?.method
+      
+      console.error('请求失败:', { 
+        url, 
+        method, 
+        status, 
+        error: error.message,
+        response: error.response?.data
+      });
       
       // 根据状态码处理不同的错误
       if (status === 401 && !error.config.noAuth) {
@@ -59,6 +68,9 @@ const setupInterceptors = (axiosInstance) => {
         ElMessage.error('无权限访问')
       } else if (status === 404) {
         ElMessage.error('请求的资源不存在')
+      } else if (status === 499) {
+        // 处理 Cloudflare 499 错误
+        ElMessage.error('验证服务连接失败，请刷新页面重试')
       } else {
         const msg = error.response?.data?.error || error.response?.data?.detail || '请求失败'
         ElMessage.error(msg)

@@ -16,7 +16,8 @@ export function login(data) {
     method: 'post',
     data: {
       username: data.username,
-      password: data.password
+      password: data.password,
+      turnstileResponse: data.turnstileResponse
     },
     headers: {
       'Content-Type': 'application/json'

@@ -61,17 +61,27 @@ const loadTurnstileScript = () => {
   return new Promise((resolve, reject) => {
     // 检查脚本是否已经加载
     if (document.querySelector('script[src*="turnstile.js"]')) {
+      console.log('Turnstile 脚本已加载');
       resolve();
       return;
     }
 
+    console.log('开始加载 Turnstile 脚本');
     const script = document.createElement('script');
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     script.async = true;
     script.defer = true;
+    script.crossOrigin = 'anonymous'; // 添加跨域标记
     
-    script.onload = resolve;
-    script.onerror = () => reject(new Error('加载验证码失败'));
+    script.onload = () => {
+      console.log('Turnstile 脚本加载成功');
+      resolve();
+    };
+    
+    script.onerror = (e) => {
+      console.error('Turnstile 脚本加载失败:', e);
+      reject(new Error('加载验证码失败'));
+    };
     
     document.head.appendChild(script);
   });
@@ -80,6 +90,7 @@ const loadTurnstileScript = () => {
 // 初始化 Turnstile 组件
 const initTurnstile = () => {
   if (window.turnstile) {
+    console.log('开始初始化 Turnstile 组件');
     // 如果已经有一个小部件，先重置它
     if (turnstileWidget) {
       window.turnstile.reset(turnstileWidget);
@@ -89,14 +100,23 @@ const initTurnstile = () => {
     turnstileWidget = window.turnstile.render('#cf-turnstile', {
       sitekey: TURNSTILE_SITE_KEY,
       callback: function(token) {
+        console.log('验证成功，获取到 token');
         loginForm.turnstileResponse = token;
       },
       'expired-callback': function() {
+        console.log('验证码已过期');
         loginForm.turnstileResponse = '';
         ElMessage.warning('验证码已过期，请重新验证');
+      },
+      'error-callback': function(error) {
+        console.error('验证码错误:', error);
+        loginForm.turnstileResponse = '';
+        ElMessage.error('验证码加载失败，请刷新重试');
       }
     });
+    console.log('Turnstile 组件初始化完成');
   } else {
+    console.error('window.turnstile 未定义，验证码组件加载失败');
     ElMessage.error('验证码组件加载失败');
   }
 };
@@ -110,9 +130,12 @@ const handleLogin = () => {
     
     // 验证是否完成验证码
     if (!loginForm.turnstileResponse) {
+      console.log('未完成验证码验证');
       ElMessage.warning('请先完成人机验证');
       return;
     }
+    
+    console.log('开始提交登录，验证码令牌长度:', loginForm.turnstileResponse.length);
     
     loading.value = true;
     try {
@@ -125,12 +148,15 @@ const handleLogin = () => {
       
       // 调用登录接口
       await userStore.login(loginData);
+      console.log('登录成功');
       ElMessage.success('登录成功');
       router.push('/');
     } catch (error) {
+      console.error('登录失败:', error);
       ElMessage.error('登录失败，请检查用户名和密码');
       // 重置验证码
       if (window.turnstile && turnstileWidget) {
+        console.log('重置验证码');
         window.turnstile.reset(turnstileWidget);
         loginForm.turnstileResponse = '';
       }

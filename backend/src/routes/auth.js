@@ -8,6 +8,8 @@ const authRoutes = new Hono();
 async function verifyTurnstile(token, remoteip, secretKey) {
   const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
   
+  console.log('验证 Turnstile 响应开始', { remoteip });
+  
   try {
     const formData = new FormData();
     formData.append('secret', secretKey);
@@ -16,12 +18,17 @@ async function verifyTurnstile(token, remoteip, secretKey) {
       formData.append('remoteip', remoteip);
     }
     
+    console.log('发送验证请求到 Cloudflare');
+    
     const result = await fetch(TURNSTILE_VERIFY_URL, {
       method: 'POST',
       body: formData
     });
     
-    return await result.json();
+    const verifyResult = await result.json();
+    console.log('Turnstile 验证结果:', verifyResult);
+    
+    return verifyResult;
   } catch (error) {
     console.error('Turnstile verification error:', error);
     return { success: false, 'error-codes': ['internal-error'] };
@@ -57,6 +64,11 @@ authRoutes.post('/login', async (c) => {
     const requestData = await c.req.json();
     const { username, password, turnstileResponse } = requestData;
 
+    console.log('接收到登录请求', { 
+      username, 
+      hasTurnstileResponse: !!turnstileResponse 
+    });
+
     // 参数验证
     if (!username || !password) {
       return c.json({ error: '用户名和密码不能为空' }, 400);
@@ -64,23 +76,28 @@ authRoutes.post('/login', async (c) => {
     
     // 验证 Turnstile 响应
     if (!turnstileResponse) {
+      console.log('未提供 turnstileResponse');
       return c.json({ error: '请完成人机验证' }, 400);
     }
     
     // 获取客户端 IP
     const clientIP = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || '127.0.0.1';
+    console.log('客户端 IP:', clientIP);
     
     // 检查是否配置了Turnstile密钥
     const turnstileSecretKey = c.env.TURNSTILE_SECRET_KEY;
     if (!turnstileSecretKey) {
       console.error('未配置Turnstile密钥，跳过验证');
     } else {
+      console.log('开始 Turnstile 验证');
       // 验证 Turnstile 响应
       const turnstileResult = await verifyTurnstile(turnstileResponse, clientIP, turnstileSecretKey);
       
       if (!turnstileResult.success) {
         const errorCodes = turnstileResult['error-codes'] || [];
         let errorMessage = '人机验证失败';
+        
+        console.error('Turnstile 验证失败:', errorCodes);
         
         // 提供更具体的错误信息
         if (errorCodes.includes('timeout-or-duplicate')) {
@@ -94,6 +111,7 @@ authRoutes.post('/login', async (c) => {
           'error-codes': errorCodes 
         }, 400);
       }
+      console.log('Turnstile 验证通过');
     }
 
     // 查询用户
