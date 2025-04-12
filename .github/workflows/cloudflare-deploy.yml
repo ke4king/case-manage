@@ -111,14 +111,54 @@ jobs:
             fi
           fi
           
-          # 更新 wrangler.toml 中的数据库 ID
+          # 更新 wrangler.toml 中的配置
+          echo "更新 wrangler.toml 配置..."
+          
+          # 更新数据库 ID
           if [ -n "$DB_ID" ]; then
-            echo "更新 wrangler.toml 中的数据库 ID: $DB_ID"
+            echo "更新数据库 ID: $DB_ID"
             sed -i -E "s/(database_id = \")[^\"]*(\"\s*)/\1$DB_ID\2/" wrangler.toml
             echo "DB_ID=$DB_ID" >> $GITHUB_ENV
           else
             echo "❌ 无法获取数据库 ID"
             exit 1
+          fi
+          
+          # 更新 JWT_SECRET 和 ADMIN_PASSWORD
+          if [ -n "$JWT_SECRET" ]; then
+            echo "更新 JWT_SECRET 配置..."
+            # 检查是否已有 JWT_SECRET 配置
+            if grep -q "JWT_SECRET" wrangler.toml; then
+              # 已存在，更新
+              sed -i -E "s/(JWT_SECRET = \")[^\"]*(\"\s*)/\1$JWT_SECRET\2/" wrangler.toml
+            else
+              # 不存在，添加到 [vars] 部分
+              if grep -q "\[vars\]" wrangler.toml; then
+                # [vars] 部分已存在，添加到其下
+                sed -i "/\[vars\]/a JWT_SECRET = \"$JWT_SECRET\"" wrangler.toml
+              else
+                # 添加新的 [vars] 部分
+                echo -e "\n[vars]\nJWT_SECRET = \"$JWT_SECRET\"" >> wrangler.toml
+              fi
+            fi
+          fi
+          
+          if [ -n "$ADMIN_PASSWORD" ]; then
+            echo "更新 ADMIN_PASSWORD 配置..."
+            # 检查是否已有 ADMIN_PASSWORD 配置
+            if grep -q "ADMIN_PASSWORD" wrangler.toml; then
+              # 已存在，更新
+              sed -i -E "s/(ADMIN_PASSWORD = \")[^\"]*(\"\s*)/\1$ADMIN_PASSWORD\2/" wrangler.toml
+            else
+              # 不存在，添加到 [vars] 部分
+              if grep -q "\[vars\]" wrangler.toml; then
+                # [vars] 部分已存在，添加到其下
+                sed -i "/\[vars\]/a ADMIN_PASSWORD = \"$ADMIN_PASSWORD\"" wrangler.toml
+              else
+                # 添加新的 [vars] 部分
+                echo -e "\n[vars]\nADMIN_PASSWORD = \"$ADMIN_PASSWORD\"" >> wrangler.toml
+              fi
+            fi
           fi
           
           # 检查数据库是否是新创建的
@@ -144,32 +184,6 @@ jobs:
             fi
           else
             echo "数据库已存在，跳过初始化步骤"
-          fi
-          
-          # 检查并设置 Secrets
-          echo "检查现有 Secrets..."
-          EXISTING_SECRETS=$(wrangler secret list 2>&1)
-          
-          # 设置 JWT_SECRET（如果不存在）
-          if [ -n "$JWT_SECRET" ]; then
-            if echo "$EXISTING_SECRETS" | grep -q "JWT_SECRET"; then
-              echo "Secret JWT_SECRET 已存在，跳过设置"
-            else
-              echo "设置 JWT_SECRET..."
-              wrangler secret put JWT_SECRET <<< "$JWT_SECRET"
-              echo "✅ JWT_SECRET 已配置"
-            fi
-          fi
-          
-          # 设置 ADMIN_PASSWORD（如果不存在）
-          if [ -n "$ADMIN_PASSWORD" ]; then
-            if echo "$EXISTING_SECRETS" | grep -q "ADMIN_PASSWORD"; then
-              echo "Secret ADMIN_PASSWORD 已存在，跳过设置"
-            else
-              echo "设置 ADMIN_PASSWORD..."
-              wrangler secret put ADMIN_PASSWORD <<< "$ADMIN_PASSWORD"
-              echo "✅ ADMIN_PASSWORD 已配置"
-            fi
           fi
           
           # 执行部署
