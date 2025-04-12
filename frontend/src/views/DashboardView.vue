@@ -171,7 +171,6 @@ const fetchCases = async () => {
     totalItems.value = response.pagination?.total || 0
   } catch (error) {
     ElMessage.error('获取案件列表失败')
-    console.error('获取案件列表错误:', error)
   } finally {
     loading.value = false
   }
@@ -185,7 +184,6 @@ const fetchCaseDetail = async (id) => {
     caseDetail.value = response.case
   } catch (error) {
     ElMessage.error('获取案件详情失败')
-    console.error('获取案件详情错误:', error)
   } finally {
     detailLoading.value = false
   }
@@ -193,7 +191,6 @@ const fetchCaseDetail = async (id) => {
 
 // 刷新所有数据
 const refreshData = () => {
-  console.log('刷新数据...')
   fetchCases()
 }
 
@@ -252,7 +249,6 @@ const handleDeleteCase = (row) => {
       fetchCases() // 刷新列表
     } catch (error) {
       ElMessage.error('删除案件失败')
-      console.error('删除案件错误:', error)
     }
   }).catch(() => {
     ElMessage.info('已取消删除')
@@ -271,14 +267,56 @@ const shareCase = (row) => {
 
 // 复制分享链接
 const copyShareLink = () => {
-  navigator.clipboard.writeText(currentShareLink.value)
-    .then(() => {
+  try {
+    // 使用更通用的剪切板API方法
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      // 现代浏览器API
+      navigator.clipboard.writeText(currentShareLink.value)
+        .then(() => {
+          ElMessage.success('分享链接已复制到剪贴板')
+        })
+        .catch(() => {
+          // 如果navigator.clipboard失败，尝试备用方法
+          fallbackCopyTextToClipboard(currentShareLink.value)
+        })
+    } else {
+      // 使用备用方法
+      fallbackCopyTextToClipboard(currentShareLink.value)
+    }
+  } catch (err) {
+    ElMessage.error('复制失败，请手动复制')
+  }
+}
+
+// 备用复制方法
+const fallbackCopyTextToClipboard = (text) => {
+  try {
+    // 创建一个临时文本区域
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    
+    // 避免滚动到底部
+    textArea.style.top = '0'
+    textArea.style.left = '0'
+    textArea.style.position = 'fixed'
+    textArea.style.opacity = '0'
+    
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    
+    // 执行复制命令
+    const successful = document.execCommand('copy')
+    document.body.removeChild(textArea)
+    
+    if (successful) {
       ElMessage.success('分享链接已复制到剪贴板')
-    })
-    .catch(err => {
-      console.error('复制失败:', err)
-      ElMessage.error('复制失败，请手动复制')
-    })
+    } else {
+      ElMessage.warning('无法复制到剪贴板，请手动复制')
+    }
+  } catch (err) {
+    ElMessage.error('复制失败，请手动复制')
+  }
 }
 
 onMounted(() => {

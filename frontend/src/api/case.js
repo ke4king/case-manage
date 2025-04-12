@@ -2,8 +2,6 @@ import request from './request'
 
 // 获取案件列表
 export function getCaseList(params) {
-  console.log('请求案件列表参数:', params) // 添加调试日志
-  
   // 构建查询字符串
   const queryParams = new URLSearchParams();
   if (params && params.skip !== undefined) queryParams.append('skip', params.skip);
@@ -12,8 +10,6 @@ export function getCaseList(params) {
   
   const queryString = queryParams.toString();
   const url = queryString ? `/cases?${queryString}` : '/cases';
-  
-  console.log('请求完整URL:', url);
   
   return request({
     url: url,
