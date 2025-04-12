@@ -146,28 +146,29 @@ jobs:
             echo "数据库已存在，跳过初始化步骤"
           fi
           
-          # 设置敏感配置作为 secrets
+          # 检查并设置 Secrets
+          echo "检查现有 Secrets..."
+          EXISTING_SECRETS=$(wrangler secret list 2>&1)
+          
+          # 设置 JWT_SECRET（如果不存在）
           if [ -n "$JWT_SECRET" ]; then
-            echo "设置 JWT_SECRET..."
-            wrangler secret put JWT_SECRET <<< "$JWT_SECRET"
-            
-            # 验证 JWT_SECRET 是否成功设置
-            if wrangler secret list | grep -q "JWT_SECRET"; then
-              echo "✅ JWT_SECRET 已成功配置"
+            if echo "$EXISTING_SECRETS" | grep -q "JWT_SECRET"; then
+              echo "Secret JWT_SECRET 已存在，跳过设置"
             else
-              echo "❌ JWT_SECRET 配置失败"
+              echo "设置 JWT_SECRET..."
+              wrangler secret put JWT_SECRET <<< "$JWT_SECRET"
+              echo "✅ JWT_SECRET 已配置"
             fi
           fi
           
+          # 设置 ADMIN_PASSWORD（如果不存在）
           if [ -n "$ADMIN_PASSWORD" ]; then
-            echo "设置 ADMIN_PASSWORD..."
-            wrangler secret put ADMIN_PASSWORD <<< "$ADMIN_PASSWORD"
-            
-            # 验证 ADMIN_PASSWORD 是否成功设置
-            if wrangler secret list | grep -q "ADMIN_PASSWORD"; then
-              echo "✅ ADMIN_PASSWORD 已成功配置"
+            if echo "$EXISTING_SECRETS" | grep -q "ADMIN_PASSWORD"; then
+              echo "Secret ADMIN_PASSWORD 已存在，跳过设置"
             else
-              echo "❌ ADMIN_PASSWORD 配置失败"
+              echo "设置 ADMIN_PASSWORD..."
+              wrangler secret put ADMIN_PASSWORD <<< "$ADMIN_PASSWORD"
+              echo "✅ ADMIN_PASSWORD 已配置"
             fi
           fi
           
