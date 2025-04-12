@@ -50,7 +50,6 @@ const fetchSharedCase = async () => {
     const response = await getSharedCaseByToken(token)
     caseData.value = response.case
   } catch (err) {
-    console.error('获取共享案件失败:', err)
     error.value = err.response?.data?.error || '获取案件失败，该链接可能已失效'
     ElMessage.error(error.value)
   } finally {

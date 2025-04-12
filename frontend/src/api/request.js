@@ -41,7 +41,6 @@ const setupInterceptors = (axiosInstance) => {
   // 响应拦截器
   axiosInstance.interceptors.response.use(
     response => {
-      console.log('请求成功:', response.config.url, response.data);
       return response.data
     },
     error => {
@@ -49,14 +48,6 @@ const setupInterceptors = (axiosInstance) => {
       const status = error.response?.status
       const url = error.config?.url
       const method = error.config?.method
-      
-      console.error('请求失败:', { 
-        url, 
-        method, 
-        status, 
-        error: error.message,
-        response: error.response?.data
-      });
       
       // 根据状态码处理不同的错误
       if (status === 401 && !error.config.noAuth) {

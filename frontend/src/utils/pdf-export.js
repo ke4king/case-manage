@@ -57,7 +57,6 @@ export async function exportElementToPDF(element, fileName = 'export', openInNew
     
     return true
   } catch (error) {
-    console.error('导出PDF失败:', error)
     return false
   }
 } 

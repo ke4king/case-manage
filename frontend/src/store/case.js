@@ -26,7 +26,6 @@ export const useCaseStore = defineStore('case', {
         this.totalCount = response.total || this.caseList.length
         return this.caseList
       } catch (error) {
-        console.error('获取案件列表失败:', error)
         throw error
       } finally {
         this.loading = false
@@ -40,7 +39,6 @@ export const useCaseStore = defineStore('case', {
         this.caseStats = response
         return response
       } catch (error) {
-        console.error('获取案件统计失败:', error)
         throw error
       }
     },
@@ -53,7 +51,6 @@ export const useCaseStore = defineStore('case', {
         this.currentCase = response.case
         return response
       } catch (error) {
-        console.error('获取案件详情失败:', error)
         throw error
       } finally {
         this.loading = false
@@ -71,7 +68,6 @@ export const useCaseStore = defineStore('case', {
         }
         return response
       } catch (error) {
-        console.error('创建案件失败:', error)
         throw error
       } finally {
         this.loading = false
@@ -95,7 +91,6 @@ export const useCaseStore = defineStore('case', {
         }
         return response
       } catch (error) {
-        console.error('更新案件失败:', error)
         throw error
       } finally {
         this.loading = false
@@ -110,7 +105,6 @@ export const useCaseStore = defineStore('case', {
         this.caseList = this.caseList.filter(item => item.id != id)
         return response
       } catch (error) {
-        console.error('删除案件失败:', error)
         throw error
       }
     },
