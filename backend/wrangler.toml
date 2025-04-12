@@ -11,11 +11,13 @@ not_found_handling = "single-page-application"
 
 # 生产环境配置
 [vars]
-JWT_SECRET = "wP8gV4mD1pO9kL7tY6cB"
 ENV = "production"
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "Qwer999tt!@#"
-TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA" # 请替换为您的实际 secret key
+# 以下敏感信息将通过 wrangler secret 命令设置
+# 请运行以下命令设置密钥:
+# wrangler secret put JWT_SECRET
+# wrangler secret put ADMIN_USERNAME
+# wrangler secret put ADMIN_PASSWORD 
+# wrangler secret put TURNSTILE_SECRET_KEY
 
 # 数据库配置
 [[d1_databases]]
