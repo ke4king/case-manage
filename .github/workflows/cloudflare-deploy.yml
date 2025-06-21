@@ -1,49 +1,178 @@
-name: Deploy to Cloudflare
+name: 部署到 Cloudflare
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # 当推送到 main 分支时触发
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: 构建并部署应用
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
-      - name: Install Dependencies (Frontend)
-        run: |
-          cd frontend
-          npm ci
-          
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-          
-      - name: Install Dependencies (Backend)
-        run: |
-          cd backend
-          npm ci
-          
-      - name: Update D1 Database ID
-        run: |
-          cd backend
-          sed -i "s/database_id = \"\"/database_id = \"${{ secrets.D1_DATABASE_ID }}\"/" wrangler.toml
-          
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'backend'
-          command: deploy
+
+      - name: 安装依赖
+        run: npm run install:all
+
+      - name: 构建前端
+        run: npm run build:frontend
+
+      - name: 安装 Wrangler
+        run: npm install -g wrangler
+
+      - name: 准备和部署到 Cloudflare
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }} 
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          # 如果您有已知的数据库 ID，可以在仓库设置中添加这个 secret
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+        run: |
+          cd backend
+          
+          # 验证环境变量是否正确设置（不显示实际值）
+          echo "检查环境变量..."
+          if [ -n "$JWT_SECRET" ]; then
+            echo "JWT_SECRET 已设置 ✓"
+            # 截取前两个字符并加掩码以便确认，同时不泄露整个密钥
+            MASKED_JWT="${JWT_SECRET:0:2}$(printf '%*s' $((${#JWT_SECRET} - 2)) | tr ' ' '*')"
+            echo "JWT_SECRET 前缀: ${MASKED_JWT:0:4}..."
+          else
+            echo "警告: JWT_SECRET 未设置 ✗"
+          fi
+          
+          if [ -n "$ADMIN_PASSWORD" ]; then
+            echo "ADMIN_PASSWORD 已设置 ✓"
+            # 截取前两个字符并加掩码以便确认，同时不泄露整个密码
+            MASKED_PWD="${ADMIN_PASSWORD:0:2}$(printf '%*s' $((${#ADMIN_PASSWORD} - 2)) | tr ' ' '*')"
+            echo "ADMIN_PASSWORD 前缀: ${MASKED_PWD:0:4}..."
+          else
+            echo "警告: ADMIN_PASSWORD 未设置 ✗"
+          fi
+          
+          # 创建或确认 R2 存储桶存在
+          echo "检查 R2 存储桶..."
+          if ! wrangler r2 bucket list | grep -q "case-files"; then
+            echo "创建 R2 存储桶 case-files..."
+            wrangler r2 bucket create case-files
+          else
+            echo "R2 存储桶 case-files 已存在"
+          fi
+          
+          # 安装 jq 用于解析 JSON
+          apt-get update -qq && apt-get install -y -qq jq
+          
+          # 检查并创建 D1 数据库
+          echo "检查并创建 D1 数据库..."
+          
+          # 优先使用预设的数据库 ID
+          if [ -n "$D1_DATABASE_ID" ]; then
+            echo "使用预设的数据库 ID: $D1_DATABASE_ID"
+            DB_ID=$D1_DATABASE_ID
+          else
+            # 获取数据库列表并检查是否存在
+            DATABASE_LIST=$(wrangler d1 list --json 2>/dev/null || echo "[]")
+            EXISTING_DB=$(echo "$DATABASE_LIST" | jq -r '.[] | select(.name=="case-management") | .uuid')
+            
+            if [ -n "$EXISTING_DB" ]; then
+              echo "✅ 找到 D1 数据库: $EXISTING_DB"
+              DB_ID=$EXISTING_DB
+            else
+              echo "创建新的 D1 数据库: case-management"
+              CREATE_OUTPUT=$(wrangler d1 create case-management 2>&1)
+              
+              if echo "$CREATE_OUTPUT" | grep -q "Successfully created"; then
+                # 尝试从输出中提取数据库 ID（支持多种格式）
+                DB_ID=$(echo "$CREATE_OUTPUT" | grep -oP "database_id = \"\K[^\"]+")
+                if [ -z "$DB_ID" ]; then
+                  DB_ID=$(echo "$CREATE_OUTPUT" | grep -oP "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
+                fi
+                
+                echo "✅ 数据库创建成功，ID: $DB_ID"
+              else
+                # 如果创建失败，可能是因为并发创建，再次检查列表
+                LIST_OUTPUT=$(wrangler d1 list --json 2>/dev/null || echo "[]")
+                DB_ID=$(echo "$LIST_OUTPUT" | jq -r '.[] | select(.name=="case-management") | .uuid')
+                
+                if [ -z "$DB_ID" ]; then
+                  echo "❌ 无法创建或找到 D1 数据库"
+                  exit 1
+                fi
+              fi
+            fi
+          fi
+          
+          # 更新 wrangler.toml 中的数据库 ID
+          if [ -n "$DB_ID" ]; then
+            echo "更新 wrangler.toml 中的数据库 ID: $DB_ID"
+            sed -i -E "s/(database_id = \")[^\"]*(\"\s*)/\1$DB_ID\2/" wrangler.toml
+            echo "DB_ID=$DB_ID" >> $GITHUB_ENV
+          else
+            echo "❌ 无法获取数据库 ID"
+            exit 1
+          fi
+          
+          # 检查数据库是否是新创建的
+          DB_EXISTS=false
+          if echo "$DATABASE_LIST" | jq -r '.[] | select(.name=="case-management") | .uuid' | grep -q "$DB_ID"; then
+            DB_EXISTS=true
+          fi
+          
+          # 初始化数据库（仅在新创建时）
+          if [ "$DB_EXISTS" = false ] && [ -n "$DB_ID" ]; then
+            echo "初始化新数据库..."
+            if [ -f "migrations/init.sql" ]; then
+              echo "执行数据库初始化: migrations/init.sql"
+              if ! wrangler d1 execute case-management --file="migrations/init.sql" --remote; then
+                echo "❌ 数据库初始化失败"
+                exit 1
+              else
+                echo "✅ 数据库初始化成功"
+              fi
+            else
+              echo "❌ 未找到数据库初始化文件 (init.sql)"
+              exit 1
+            fi
+          else
+            echo "数据库已存在，跳过初始化步骤"
+          fi
+          
+          # 设置敏感配置作为 secrets
+          if [ -n "$JWT_SECRET" ]; then
+            echo "设置 JWT_SECRET..."
+            wrangler secret put JWT_SECRET <<< "$JWT_SECRET"
+            
+            # 验证 JWT_SECRET 是否成功设置
+            if wrangler secret list | grep -q "JWT_SECRET"; then
+              echo "✅ JWT_SECRET 已成功配置"
+            else
+              echo "❌ JWT_SECRET 配置失败"
+            fi
+          fi
+          
+          if [ -n "$ADMIN_PASSWORD" ]; then
+            echo "设置 ADMIN_PASSWORD..."
+            wrangler secret put ADMIN_PASSWORD <<< "$ADMIN_PASSWORD"
+            
+            # 验证 ADMIN_PASSWORD 是否成功设置
+            if wrangler secret list | grep -q "ADMIN_PASSWORD"; then
+              echo "✅ ADMIN_PASSWORD 已成功配置"
+            else
+              echo "❌ ADMIN_PASSWORD 配置失败"
+            fi
+          fi
+          
+          # 执行部署
+          echo "开始部署..."
+          echo "最终 wrangler.toml 配置:"
+          cat wrangler.toml
+          wrangler deploy 
