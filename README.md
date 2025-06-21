@@ -28,44 +28,113 @@
 - PDF 导出
 - 响应式设计，适配移动设备
 
-## 安装与使用
-
-### 前端
-
-```bash
-cd frontend
-npm install
-npm run dev  # 开发模式
-npm run build  # 生产构建
-```
-
-### 后端
-
-```bash
-cd backend
-npm install
-npx wrangler dev --env dev  # 开发模式
-npx wrangler deploy  # 部署到 Cloudflare Workers
-```
-
 ## 环境要求
 
 - Node.js 18+
 - npm 9+
 - Wrangler CLI (`npm install -g wrangler`)
 
-## 配置
+## 开发环境配置
 
-1. 前端配置文件：`frontend/vite.config.js`
-2. 后端配置文件：`backend/wrangler.toml`
+### 前端开发
 
-## 开发者
+```bash
+cd frontend
+npm install
+npm run dev  # 开发模式
+```
 
-- 案件管理团队
+### 后端开发
 
-## 许可证
+```bash
+cd backend
+npm install
+npx wrangler dev  # 本地开发模式
+```
 
-私有项目，未授权禁止使用
+## 手动部署流程
+
+### 1. 环境准备
+
+1. 安装 Wrangler CLI：
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. 登录到 Cloudflare：
+   ```bash
+   wrangler login
+   ```
+
+### 2. 配置 Cloudflare 服务
+
+1. 创建并配置 D1 数据库：
+   ```bash
+   # 创建数据库
+   wrangler d1 create case-management
+   
+   # 更新 wrangler.toml 中的 database_id
+   # [[d1_databases]]
+   # binding = "DB"
+   # database_name = "case-management"
+   # database_id = "你的数据库ID"
+   
+   # 执行数据库迁移
+   cd backend
+   wrangler d1 execute case-management --file=./migrations/init.sql
+   ```
+
+2. 创建 R2 存储桶：
+   ```bash
+   wrangler r2 bucket create case-files
+   ```
+
+3. 设置必要的环境变量：
+   ```bash
+   # JWT 密钥
+   wrangler secret put JWT_SECRET
+   
+   # 管理员账户信息
+   wrangler secret put ADMIN_USERNAME
+   wrangler secret put ADMIN_PASSWORD
+   
+   # Turnstile 配置
+   wrangler secret put TURNSTILE_SECRET_KEY
+   ```
+
+### 3. 部署步骤
+
+1. 构建前端：
+   ```bash
+   cd frontend
+   npm install
+   npm run build
+   ```
+
+2. 部署到 Cloudflare Workers：
+   ```bash
+   cd ../backend
+   npm install
+   wrangler deploy
+   ```
+
+### 4. 验证部署
+
+部署完成后，您将获得一个 `.workers.dev` 域名。访问该域名确认部署是否成功。
+
+### 5. 故障排查
+
+如果遇到部署问题，可以：
+
+1. 检查 wrangler.toml 配置是否正确
+2. 确认所有环境变量是否已设置
+3. 查看 Cloudflare Dashboard 中的错误日志
+4. 使用 `wrangler tail` 命令查看实时日志
+
+## 配置文件
+
+1. 前端配置：`frontend/vite.config.js`
+2. 后端配置：`backend/wrangler.toml`
 
 ## 技术栈
 
@@ -84,273 +153,13 @@ npx wrangler deploy  # 部署到 Cloudflare Workers
   - MD Editor V3 (Markdown 编辑与预览)
   - Axios (HTTP 客户端)
 
-## 项目结构
+## 许可证
 
-本项目采用前后端分离的架构:
+私有项目，未授权禁止使用
 
-```
-case-management-cloudflare/
-├── backend/               # 后端代码
-│   ├── src/               # 源代码
-│   ├── migrations/        # 数据库迁移文件
-│   ├── wrangler/          # Wrangler相关工具
-│   ├── package.json       # 后端依赖配置
-│   └── wrangler.toml      # Cloudflare Workers配置
-├── frontend/              # 前端代码
-│   ├── src/               # 源代码
-│   ├── public/            # 静态资源
-│   └── package.json       # 前端依赖配置
-├── public/                # 构建后的前端资源（用于部署）
-└── package.json           # 项目根依赖配置
-```
+## 开发者
 
-## 开发指南
-
-### 初始安装
-
-首次克隆项目后，安装所有依赖:
-
-```bash
-npm run install:all
-```
-
-### 开发模式
-
-同时启动前端和后端开发服务器:
-
-```bash
-npm run dev
-```
-
-仅启动后端:
-
-```bash
-npm run dev:backend
-```
-
-仅启动前端:
-
-```bash
-npm run dev:frontend
-```
-
-### 部署
-
-构建前端并部署整个应用:
-
-```bash
-npm run deploy
-```
-
-## 前提条件
-
-在部署前，您需要：
-
-1. [Cloudflare 账户](https://dash.cloudflare.com/sign-up)
-2. [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) 工具
-3. Node.js 16+ 环境
-
-## 部署步骤
-
-### 1. 准备工作
-
-1. 登录 Cloudflare 账户并获取 API 令牌：
-   - 访问 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-   - 创建 API 令牌，确保有 Workers、D1 和 R2 的权限
-
-2. 安装 Wrangler 并登录：
-   ```bash
-   npm install -g wrangler
-   wrangler login
-   ```
-
-3. 克隆项目并安装依赖：
-   ```bash
-   git clone https://your-repository/case-management-cloudflare.git
-   cd case-management-cloudflare
-   npm install
-   ```
-
-### 2. 创建 D1 数据库
-
-1. 创建新的 D1 数据库：
-   ```bash
-   wrangler d1 create case-management
-   ```
-
-2. 记下输出中的数据库 ID，并更新 `wrangler.toml` 文件中的 `database_id` 字段。
-
-3. 执行迁移脚本创建表结构：
-   ```bash
-   npm run setup:d1
-   ```
-
-### 3. 创建 R2 存储桶
-
-1. 创建用于存储案件文件的 R2 存储桶：
-   ```bash
-   wrangler r2 bucket create case-files
-   wrangler r2 bucket create case-files-dev
-   ```
-
-2. 确保在 `wrangler.toml` 中已正确配置了 R2 存储桶信息。
-
-### 4. 配置环境变量
-
-1. 在 `wrangler.toml` 中设置环境变量：
-   - 设置 `JWT_SECRET` 为一个安全的随机字符串
-
-2. 或者使用 Cloudflare Dashboard 配置环境变量：
-   - 访问 Workers & Pages > case-management > Settings > Variables
-   - 添加环境变量 `JWT_SECRET`
-
-### 5. 构建和部署前端
-
-1. 进入前端目录并安装依赖：
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. 构建前端代码：
-   ```bash
-   npm run build
-   ```
-   
-   这将自动把构建结果输出到 `../public` 目录（与 Worker 集成）。
-
-### 6. 部署 Worker
-
-1. 回到项目根目录并使用 Wrangler 部署：
-   ```bash
-   cd ..
-   npm run deploy
-   ```
-
-2. 部署完成后，您将获得一个 `.workers.dev` 域名，例如 `case-management.your-subdomain.workers.dev`。
-
-### 7. 绑定自定义域名（可选）
-
-如果您想使用自定义域名：
-
-1. 前往 Cloudflare Dashboard > Workers & Pages > case-management > Triggers
-2. 点击"添加自定义域"，按照指引完成配置
-
-## 本地开发
-
-### 后端开发
-
-```bash
-# 在项目根目录启动 Worker 开发服务器
-npm run dev
-```
-
-### 前端开发
-
-```bash
-# 在另一个终端窗口进入前端目录
-cd frontend
-
-# 启动 Vite 开发服务器
-npm run dev
-```
-
-前端开发服务器将在 http://localhost:5173 上运行，并将 API 请求代理到后端开发服务器。
-
-### 数据库迁移（本地开发）
-
-```bash
-wrangler d1 execute case-management-dev --local --file=./migrations/init.sql
-```
-
-## 日常运维
-
-### 更新应用
-
-修改代码后，重新构建前端并部署：
-
-```bash
-# 构建前端
-cd frontend
-npm run build
-
-# 部署 Worker
-cd ..
-npm run deploy
-```
-
-### 管理数据库
-
-使用 Wrangler 直接操作 D1 数据库：
-```bash
-# 查询数据
-wrangler d1 execute case-management --command "SELECT * FROM users"
-
-# 导出数据库
-wrangler d1 backup case-management
-```
-
-### 管理 R2 存储
-
-使用 Wrangler 管理 R2 存储：
-```bash
-# 列出文件
-wrangler r2 object list case-files
-
-# 删除文件
-wrangler r2 object delete case-files <key>
-```
-
-## 数据备份与恢复
-
-### 备份 D1 数据库
-
-```bash
-wrangler d1 backup case-management
-```
-
-### 备份 R2 存储
-
-使用 Wrangler 导出 R2 数据：
-```bash
-wrangler r2 list --json > r2-files-list.json
-```
-
-然后可以写一个脚本遍历列表下载所有文件。
-
-## 故障排除
-
-1. **部署失败**：
-   - 检查 `wrangler.toml` 配置
-   - 确保 API 令牌有足够权限
-   - 检查日志：`wrangler tail`
-
-2. **数据库错误**：
-   - 验证 D1 实例是否正确绑定
-   - 检查 SQL 语法
-   - 查看迁移是否成功执行
-
-3. **文件上传失败**：
-   - 检查 R2 存储桶权限
-   - 验证 R2 绑定是否正确配置
-   - 检查文件大小是否超出限制
-
-4. **前端问题**：
-   - 检查浏览器控制台错误
-   - 验证 API 请求路径是否正确
-   - 确保前端构建成功并部署到 public 目录
-
-## 安全注意事项
-
-1. **永远不要**：
-   - 硬编码 JWT 密钥或其他敏感信息
-   - 在源代码中存储凭据
-   - 忽略输入验证
-
-2. **最佳实践**：
-   - 使用环境变量存储敏感信息
-   - 使用安全的 JWT 配置
-   - 定期更新依赖
+- 案件管理团队
 
 ## 更多资源
 
