@@ -34,6 +34,11 @@ jobs:
           cd backend
           npm ci
           
+      - name: Update D1 Database ID
+        run: |
+          cd backend
+          sed -i "s/database_id = \"\"/database_id = \"${{ secrets.D1_DATABASE_ID }}\"/" wrangler.toml
+          
       - name: Deploy to Cloudflare
         uses: cloudflare/wrangler-action@v3
         with:
