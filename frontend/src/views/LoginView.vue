@@ -1,21 +1,50 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
-      <div class="login-title">案件管理系统</div>
-      <el-form :model="loginForm" :rules="rules" ref="loginFormRef" label-position="top">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="loginForm.username" placeholder="请输入用户名" @keyup.enter="handleLogin"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin"></el-input>
-        </el-form-item>
-        <el-form-item label="验证码" prop="turnstileResponse">
-          <div id="cf-turnstile" class="turnstile-container"></div>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :loading="loading" style="width: 100%;" @click="handleLogin">登录</el-button>
-        </el-form-item>
-      </el-form>
+    <div class="login-content">
+      <div class="login-box">
+        <div class="brand-section">
+          <div class="logo">
+            <i class="el-icon-folder"></i>
+          </div>
+          <h1 class="login-title">案件管理系统</h1>
+          <p class="login-subtitle">专业的案件管理解决方案</p>
+        </div>
+        
+        <el-form :model="loginForm" :rules="rules" ref="loginFormRef" label-position="top" class="login-form">
+          <el-form-item label="用户名" prop="username">
+            <el-input 
+              v-model="loginForm.username" 
+              placeholder="请输入用户名" 
+              prefix-icon="el-icon-user"
+              @keyup.enter="handleLogin">
+            </el-input>
+          </el-form-item>
+          
+          <el-form-item label="密码" prop="password">
+            <el-input 
+              type="password" 
+              v-model="loginForm.password" 
+              placeholder="请输入密码" 
+              prefix-icon="el-icon-lock"
+              @keyup.enter="handleLogin">
+            </el-input>
+          </el-form-item>
+          
+          <el-form-item label="验证码" prop="turnstileResponse">
+            <div id="cf-turnstile" class="turnstile-container"></div>
+          </el-form-item>
+          
+          <el-form-item>
+            <el-button 
+              type="primary" 
+              :loading="loading" 
+              class="login-button" 
+              @click="handleLogin">
+              {{ loading ? '登录中...' : '登录' }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -184,28 +213,137 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #2c3e50;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-content {
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
 }
 
 .login-box {
-  width: 400px;
-  padding: 30px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.brand-section {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 40px;
+  transform: rotate(-10deg);
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: rotate(0deg);
 }
 
 .login-title {
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 24px;
-  color: #409EFF;
+  font-size: 28px;
+  color: #2c3e50;
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.login-subtitle {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+.login-form {
+  margin-top: 30px;
+}
+
+:deep(.el-input__inner) {
+  height: 45px;
+  line-height: 45px;
+  border-radius: 8px;
+  border: 2px solid #eee;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-input__inner:focus) {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+:deep(.el-form-item__label) {
+  font-size: 14px;
+  color: #606266;
+  padding-bottom: 8px;
+}
+
+.login-button {
+  width: 100%;
+  height: 45px;
+  font-size: 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  margin-top: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.login-button:active {
+  transform: translateY(0);
 }
 
 .turnstile-container {
   display: flex;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 8px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 20px;
+  }
+  
+  .login-title {
+    font-size: 24px;
+  }
+  
+  .logo {
+    width: 60px;
+    height: 60px;
+    font-size: 30px;
+  }
 }
 </style> 
