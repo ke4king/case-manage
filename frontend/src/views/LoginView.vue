@@ -15,7 +15,7 @@
             <el-input 
               v-model="loginForm.username" 
               placeholder="请输入用户名" 
-              prefix-icon="el-icon-user"
+              :prefix-icon="User"
               @keyup.enter="handleLogin">
             </el-input>
           </el-form-item>
@@ -25,7 +25,7 @@
               type="password" 
               v-model="loginForm.password" 
               placeholder="请输入密码" 
-              prefix-icon="el-icon-lock"
+              :prefix-icon="Lock"
               @keyup.enter="handleLogin">
             </el-input>
           </el-form-item>
@@ -53,6 +53,7 @@
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 
 const router = useRouter()
@@ -274,17 +275,37 @@ onBeforeUnmount(() => {
   margin-top: 30px;
 }
 
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #eee inset;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
 :deep(.el-input__inner) {
   height: 45px;
   line-height: 45px;
   border-radius: 8px;
-  border: 2px solid #eee;
+  border: none;
   transition: all 0.3s ease;
 }
 
-:deep(.el-input__inner:focus) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+:deep(.el-input.is-focus .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #667eea inset, 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+:deep(.el-input:hover .el-input__wrapper) {
+  box-shadow: 0 0 0 1px #c0c4cc inset;
+}
+
+:deep(.el-input__prefix) {
+  left: 12px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-input__prefix-inner) {
+  color: #909399;
+  font-size: 16px;
 }
 
 :deep(.el-form-item__label) {
