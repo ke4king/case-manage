@@ -275,26 +275,100 @@ onBeforeUnmount(() => {
   margin-top: 30px;
 }
 
+/* 移除系统自带的outline边框 */
 :deep(.el-input__wrapper) {
-  box-shadow: 0 0 0 1px #eee inset;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  background: #ffffff;
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加渐变边框效果 */
+:deep(.el-input__wrapper)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 12px;
+  padding: 2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: exclude;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 :deep(.el-input__inner) {
   height: 45px;
   line-height: 45px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: none;
   transition: all 0.3s ease;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
-:deep(.el-input.is-focus .el-input__wrapper) {
-  box-shadow: 0 0 0 1px #667eea inset, 0 0 0 2px rgba(102, 126, 234, 0.1);
-}
-
+/* 悬停效果 */
 :deep(.el-input:hover .el-input__wrapper) {
-  box-shadow: 0 0 0 1px #c0c4cc inset;
+  border-color: #c0c4cc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 聚焦状态的美观边框 */
+:deep(.el-input.is-focus .el-input__wrapper) {
+  border-color: transparent !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+  outline: none !important;
+}
+
+:deep(.el-input.is-focus .el-input__wrapper)::before {
+  opacity: 1;
+}
+
+/* 移除所有可能的系统outline */
+:deep(.el-input),
+:deep(.el-input__wrapper),
+:deep(.el-input__inner),
+:deep(.el-input.is-focus),
+:deep(.el-input:focus),
+:deep(.el-input:focus-within) {
+  outline: none !important;
+}
+
+/* 覆盖Element Plus的错误状态红色边框 */
+:deep(.el-form-item.is-error .el-input__wrapper) {
+  border-color: #e4e7ed !important;
+  box-shadow: none !important;
+}
+
+:deep(.el-form-item.is-error .el-input:hover .el-input__wrapper) {
+  border-color: #c0c4cc !important;
+}
+
+:deep(.el-form-item.is-error .el-input.is-focus .el-input__wrapper) {
+  border-color: transparent !important;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+}
+
+:deep(.el-form-item.is-error .el-input.is-focus .el-input__wrapper)::before {
+  opacity: 1;
+}
+
+/* 聚焦时图标颜色变化 */
+:deep(.el-input.is-focus .el-input__prefix-inner) {
+  color: #667eea;
 }
 
 :deep(.el-input__prefix) {
