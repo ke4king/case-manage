@@ -9,7 +9,6 @@ binding = "ASSETS"
 run_worker_first=false
 not_found_handling = "single-page-application"
 
-# 生产环境配置
 [vars]
 ENV = "production"
 # 以下敏感信息将通过 wrangler secret 命令设置
